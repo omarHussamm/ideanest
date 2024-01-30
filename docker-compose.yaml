@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  # MongoDB service
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - mynetwork
+
+  # Go application service
+  go-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-app
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
