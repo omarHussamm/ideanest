@@ -5,6 +5,7 @@ import (
 	configs "demo/config"
 	"demo/pkg/controllers"
 	"demo/pkg/database/mongodb/repository"
+	"demo/pkg/utils"
 	"net/http"
 	"time"
 
@@ -46,7 +47,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, req)
+	c.JSON(http.StatusOK, gin.H{"message": "welcome!"})
 
 }
 
@@ -63,15 +64,54 @@ func SignIn(c *gin.Context) {
 		return
 	}
 
-	u, err := userRepo.GetUserByEmailAndPassword(ctx, req)
+	token, err := userRepo.GetUserByEmailAndPassword(ctx, req)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, u)
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "welcome back!",
+		"access_token":  token["access_token"],
+		"refresh_token": token["refresh_token"],
+	})
 
 }
 
-func RefreshToken(c *gin.Context) {
+func RefreshTokens(c *gin.Context) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var tokenReq controllers.TokenReqBody
+	c.BindJSON(&tokenReq)
+
+	uid, err := utils.RefreshTokenValid(tokenReq.Refresh_token)
+
+	if err != nil {
+		c.String(http.StatusUnauthorized, "Unauthorized")
+		c.Abort()
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = userRepo.GetUserByID(ctx, uid)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := utils.GenerateToken(uid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "tokens refreshed", "access_token": token["access_token"], "refresh_token": token["refresh_token"]})
+
 }

@@ -10,3 +10,7 @@ type SignUpReq struct {
 	Email    string `json:"email,omitempty" binding:"required"`
 	Password string `json:"password,omitempty" binding:"required"`
 }
+
+type TokenReqBody struct {
+	Refresh_token string `json:"refresh_token,omitempty" binding:"required"`
+}

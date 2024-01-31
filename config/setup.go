@@ -28,6 +28,8 @@ func ConnectDB() *mongo.Client {
 
 	fmt.Println("Connected to MongoDB")
 
+	// client.Database("ideaNest").Drop(ctx)
+
 	return client
 }
 

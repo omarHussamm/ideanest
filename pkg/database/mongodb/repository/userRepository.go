@@ -4,11 +4,13 @@ import (
 	"context"
 	"demo/pkg/controllers"
 	"demo/pkg/database/mongodb/models"
+	"demo/pkg/utils"
 	"fmt"
 	"log"
+	"math/rand"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -23,15 +25,14 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, req controllers.SignUpReq) error {
-	_, err := r.GetUserByEmail(ctx, req.Email)
+	err := r.GetUserByEmail(ctx, req.Email)
 
 	if err == nil {
-		log.Printf("This email %s is used before: %v\n", req.Email, err)
-		return fmt.Errorf("error inserting user")
+		return fmt.Errorf("email used before")
 	}
 
 	newUser := models.User{
-		ID:       primitive.NewObjectID(),
+		ID:       uint(rand.Uint32()),
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
@@ -45,24 +46,40 @@ func (r *UserRepository) CreateUser(ctx context.Context, req controllers.SignUpR
 	return nil
 }
 
-func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) error {
 	var user models.User
-	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	err := r.collection.FindOne(ctx, gin.H{"email": email}).Decode(&user)
 	if err != nil {
-		log.Printf("Error fetching user by email: %v\n", err)
-		return nil, fmt.Errorf("error fetching user by email")
+		return fmt.Errorf("error fetching user by email")
+	}
+	return nil
+}
+
+func (r *UserRepository) GetUserByID(ctx context.Context, id uint) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, gin.H{"id": id}).Decode(&user)
+	if err != nil {
+		log.Printf("Error fetching user by id: %v\n", err)
+		return nil, fmt.Errorf("error fetching user by id %v", err)
 	}
 	return &user, nil
 }
 
-func (r *UserRepository) GetUserByEmailAndPassword(ctx context.Context, req controllers.LoginReq) (*models.User, error) {
+func (r *UserRepository) GetUserByEmailAndPassword(ctx context.Context, req controllers.LoginReq) (map[string]string, error) {
 	var user models.User
 	err := r.collection.FindOne(ctx, req).Decode(&user)
 	if err != nil {
 		log.Printf("Error fetching user by email and password: %v\n", err)
 		return nil, fmt.Errorf("error fetching user by email and password")
 	}
-	return &user, nil
+
+	token, err := utils.GenerateToken(user.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error) {
