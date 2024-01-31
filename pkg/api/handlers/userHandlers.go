@@ -99,14 +99,14 @@ func RefreshTokens(c *gin.Context) {
 		return
 	}
 
-	_, err = userRepo.GetUserByID(ctx, uid)
+	user, err := userRepo.GetUserByID(ctx, uid)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	token, err := utils.GenerateToken(uid)
+	token, err := utils.GenerateToken(user.ID, user.Email, user.Name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

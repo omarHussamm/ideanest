@@ -73,7 +73,7 @@ func (r *UserRepository) GetUserByEmailAndPassword(ctx context.Context, req cont
 		return nil, fmt.Errorf("error fetching user by email and password")
 	}
 
-	token, err := utils.GenerateToken(user.ID)
+	token, err := utils.GenerateToken(user.ID, user.Email, user.Name)
 
 	if err != nil {
 		return nil, err
@@ -106,4 +106,14 @@ func (r *UserRepository) GetAllUsers(ctx context.Context) ([]*models.User, error
 	}
 
 	return users, nil
+}
+
+func (r *UserRepository) GetUserNameByEmail(ctx context.Context, email string) (string, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, gin.H{"email": email}).Decode(&user)
+	if err != nil {
+		log.Printf("Error fetching user by id: %v\n", err)
+		return "", fmt.Errorf("error fetching user by id %v", err)
+	}
+	return user.Name, nil
 }
