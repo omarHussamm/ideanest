@@ -36,7 +36,3 @@ The project structure is designed to assist you in getting started quickly. You 
   - **unit/**: Unit tests.
 
 - **.gitignore**: Specifies files and directories to be ignored by Git.
-
-## Getting Started
-
-To begin working with the application, follow the instructions in the project documentation. Feel free to adjust the project structure as needed based on your preferences and evolving project requirements.
